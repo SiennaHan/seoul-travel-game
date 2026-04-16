@@ -1,0 +1,1783 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>서울 여행 한국어 퍼즐</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --navy:   #16213e;
+  --navy2:  #1e2d4e;
+  --teal:   #0f9b82;
+  --teal-l: #e2f5f1;
+  --teal-t: #7ecfc3;
+  --red:    #e03e3e;
+  --red-l:  #fdf0f0;
+  --red-t:  #f0a8a8;
+  --amber:  #f59e0b;
+  --amb-l:  #fef3c7;
+  --bg:     #f2f4f7;
+  --surf:   #ffffff;
+  --text:   #111827;
+  --text2:  #6b7280;
+  --text3:  #adb5c4;
+  --bdr:    #e5e7eb;
+}
+html, body {
+  height: 100%;
+  background: #8fa8be;
+  display: flex;
+  justify-content: center;
+  font-family: 'Noto Sans KR', sans-serif;
+}
+.phone {
+  width: 100%; max-width: 390px;
+  min-height: 100dvh;
+  background: var(--bg);
+  display: flex; flex-direction: column;
+  overflow: hidden; position: relative;
+}
+
+/* ── 상태바 ── */
+.status-bar {
+  background: var(--navy);
+  padding: 10px 20px 8px;
+  display: flex; justify-content: space-between; align-items: center;
+  flex-shrink: 0; z-index: 10;
+}
+.s-time  { color: rgba(255,255,255,.9); font-size:12px; font-weight:600; }
+.s-right { display:flex; align-items:center; gap:10px; }
+.s-title { color: rgba(255,255,255,.55); font-size:11px; letter-spacing:.4px; }
+.s-xp    { color: #f0c060; font-size:11px; font-weight:700; }
+
+/* ── 화면 전환 ── */
+.screen { display:none; flex-direction:column; flex:1; overflow:hidden; }
+.screen.active { display:flex; }
+
+@keyframes slideUp   { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
+@keyframes slideDown { from{opacity:0;transform:translateY(-20px)} to{opacity:1;transform:translateY(0)} }
+@keyframes fadeIn    { from{opacity:0} to{opacity:1} }
+@keyframes fadeUp    { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+.anim-up   { animation: slideUp .28s ease both; }
+.anim-down { animation: slideDown .28s ease both; }
+.anim-in   { animation: fadeIn .22s ease both; }
+.ain       { animation: fadeUp .22s ease both; }
+
+/* ════════════════════════════════
+   지도 화면
+════════════════════════════════ */
+#mapScreen { overflow-y: auto; }
+
+.map-header {
+  background: var(--navy);
+  padding: 14px 20px 16px;
+  flex-shrink: 0;
+}
+.map-header-top {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 12px;
+}
+.map-greeting { color:#fff; font-size:17px; font-weight:700; letter-spacing:-.3px; }
+.map-total-xp {
+  background: rgba(255,255,255,.1);
+  border: 1px solid rgba(255,255,255,.15);
+  border-radius: 20px; padding: 5px 12px;
+  color: #f0c060; font-size:12px; font-weight:700;
+}
+.map-sub { color: rgba(255,255,255,.5); font-size:12px; }
+
+.map-wrap {
+  height: 240px; flex-shrink:0;
+  overflow:hidden; background:#e4eef6; position:relative;
+}
+.map-wrap svg { width:100%; height:100%; display:block; }
+
+/* 핀 탭 영역 오버레이 */
+.pin-tap {
+  position: absolute;
+  cursor: pointer;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.loc-list {
+  padding: 16px 16px 24px;
+  display: flex; flex-direction: column; gap: 10px;
+}
+.loc-card {
+  background: var(--surf);
+  border-radius: 14px;
+  border: 1px solid var(--bdr);
+  padding: 14px 16px;
+  display: flex; align-items: center; gap: 14px;
+  cursor: pointer;
+  transition: transform .12s, box-shadow .12s;
+}
+.loc-card:active { transform: scale(.98); }
+.loc-card.locked { opacity: .45; cursor: default; pointer-events: none; }
+.loc-card.done   { border-color: var(--teal-t); }
+.loc-card.active { border-color: var(--red-t); border-width: 1.5px; }
+
+.loc-num {
+  width: 36px; height: 36px; border-radius: 50%;
+  display:flex; align-items:center; justify-content:center;
+  font-size:13px; font-weight:700; flex-shrink:0;
+}
+.loc-num.done   { background: var(--teal-l); color: var(--teal); }
+.loc-num.active { background: var(--red-l);  color: var(--red); }
+.loc-num.locked { background: var(--bg);     color: var(--text3); }
+
+.loc-info { flex:1; }
+.loc-name { font-size:14px; font-weight:600; color:var(--text); }
+.loc-desc { font-size:11.5px; color:var(--text2); margin-top:2px; }
+.loc-grammar {
+  display:flex; flex-wrap:wrap; gap:4px; margin-top:6px;
+}
+.loc-g-chip {
+  font-size:10px; font-weight:600;
+  padding: 2px 7px; border-radius:20px;
+  background: var(--amb-l); color: #92400e;
+  border: 1px solid rgba(245,158,11,.2);
+}
+.loc-unit-chip {
+  font-size:10px; font-weight:600;
+  padding: 2px 7px; border-radius:20px;
+  background: #eef2ff; color: #3730a3;
+  border: 1px solid rgba(99,102,241,.2);
+}
+
+.loc-status {
+  font-size:11px; font-weight:600; flex-shrink:0;
+}
+.loc-status.done   { color: var(--teal); }
+.loc-status.active { color: var(--red); }
+.loc-status.locked { color: var(--text3); }
+
+/* ════════════════════════════════
+   장소 진입 카드 화면
+════════════════════════════════ */
+#entryScreen {
+  overflow-y: auto;
+  background: var(--bg);
+}
+
+.entry-map-mini {
+  height: 160px; flex-shrink:0;
+  overflow:hidden; background:#e4eef6; position:relative;
+}
+.entry-map-mini svg { width:100%; height:100%; display:block; pointer-events:none; }
+
+/* 지도 위 뒤로가기 버튼 */
+.map-back-btn {
+  position: absolute;
+  top: 10px; left: 12px;
+  background: rgba(255,255,255,.88);
+  border: 0.5px solid rgba(0,0,0,.1);
+  border-radius: 20px;
+  padding: 5px 12px 5px 8px;
+  font-size: 12px; font-weight: 600;
+  color: var(--navy);
+  cursor: pointer;
+  font-family: inherit;
+  backdrop-filter: blur(4px);
+  display: flex; align-items: center; gap: 3px;
+  transition: background .15s;
+  z-index: 10;
+}
+.map-back-btn:hover { background: rgba(255,255,255,.98); }
+
+.entry-body {
+  flex:1; padding: 20px 20px 0;
+  display:flex; flex-direction:column; gap:14px;
+  overflow-y: auto;
+}
+
+.entry-place-tag {
+  display:flex; align-items:center; gap:8px;
+}
+.entry-num {
+  width:28px; height:28px; border-radius:50%;
+  background: var(--red-l); color:var(--red);
+  display:flex; align-items:center; justify-content:center;
+  font-size:11px; font-weight:700; flex-shrink:0;
+}
+.entry-place-name { font-size:20px; font-weight:700; letter-spacing:-.5px; color:var(--text); }
+.entry-place-sub  { font-size:13px; color:var(--text2); margin-top:3px; }
+
+.entry-chat {
+  display:flex; flex-direction:column; gap:10px;
+}
+.msg-row { display:flex; gap:8px; align-items:flex-start; }
+.msg-row.self { justify-content:flex-end; }
+.avatar-sm {
+  width:28px; height:28px; border-radius:50%;
+  background: var(--navy);
+  display:flex; align-items:center; justify-content:center;
+  font-size:10px; font-weight:700; color:rgba(255,255,255,.75);
+  flex-shrink:0;
+}
+.bbl-f {
+  background: #f0f2f5;
+  border-radius: 14px 14px 14px 4px;
+  padding: 10px 13px; font-size:13.5px; line-height:1.55;
+  color:var(--text); max-width:240px;
+}
+.bbl-s {
+  background: var(--navy);
+  border-radius: 14px 14px 4px 14px;
+  padding: 10px 13px; font-size:13.5px; line-height:1.55;
+  color:#fff; max-width:240px;
+}
+.bbl-f strong { color:#3a86ff; font-weight:700; }
+
+.entry-grammar-card {
+  background: var(--surf);
+  border-radius: 14px; border: 1px solid var(--bdr);
+  padding: 14px 16px;
+}
+.entry-grammar-label {
+  font-size:10px; font-weight:700; letter-spacing:.8px;
+  text-transform:uppercase; color:var(--text3); margin-bottom:10px;
+}
+.entry-grammar-chips { display:flex; flex-wrap:wrap; gap:6px; }
+.entry-g-chip {
+  background: var(--amb-l); color:#92400e;
+  font-size:12px; font-weight:600;
+  padding: 5px 12px; border-radius:20px;
+  border: 1px solid rgba(245,158,11,.25);
+}
+
+.entry-btn-area { padding: 16px 20px 24px; flex-shrink:0; }
+.btn-start {
+  width:100%; padding:15px;
+  background: var(--navy); color:#fff;
+  border:none; border-radius:14px;
+  font-family:inherit; font-size:15px; font-weight:700;
+  cursor:pointer; letter-spacing:-.2px;
+  transition: transform .1s;
+}
+.btn-start:active { transform: scale(.98); }
+
+/* ════════════════════════════════
+   퍼즐 화면 (기존 v4)
+════════════════════════════════ */
+#puzzleScreen { overflow: hidden; }
+
+.puzzle-map-mini {
+  height: 140px; flex-shrink:0;
+  overflow:hidden; background:#e4eef6; position:relative;
+}
+.puzzle-map-mini svg { width:100%; height:100%; display:block; pointer-events:none; }
+
+.stage-bar {
+  background: var(--surf); border-bottom: 1px solid var(--bdr);
+  padding: 9px 16px 7px;
+  display:flex; align-items:center; justify-content:space-between; flex-shrink:0;
+}
+.s-name { font-size:13px; font-weight:600; color:var(--text); }
+.s-sub  { font-size:11px; color:var(--text2); margin-top:1px; }
+.xp-pill {
+  background: var(--amb-l); color:#92400e;
+  font-size:11px; font-weight:700;
+  padding: 4px 10px; border-radius:20px;
+  border: 1px solid rgba(245,158,11,.25); white-space:nowrap;
+}
+.prog-row {
+  display:flex; gap:3px; padding:0 16px 8px;
+  background:var(--surf); flex-shrink:0;
+}
+.prog-seg { flex:1; height:3px; border-radius:2px; background:var(--bdr); transition:background .4s; }
+.prog-seg.done   { background:var(--teal); }
+.prog-seg.active { background:var(--navy); }
+
+.scroll-area {
+  flex:1; overflow-y:auto;
+  padding: 12px 14px 0;
+  display:flex; flex-direction:column; gap:10px;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* 번역 래퍼 */
+.bbl-f-wrap { display:flex; flex-direction:column; gap:4px; max-width:240px; }
+.bbl-s-wrap { display:flex; flex-direction:column; align-items:flex-end; gap:4px; max-width:240px; }
+.bbl-s-wrap .bbl-s { align-self:flex-end; }
+
+/* 번역 텍스트 — 말풍선 안, 구분선 아래 */
+.bbl-trans {
+  display: none;
+  border-top: 1px solid rgba(0,0,0,.08);
+  margin-top: 6px;
+  padding-top: 6px;
+  font-size: 11.5px;
+  line-height: 1.5;
+  color: rgba(0,0,0,.42);
+}
+.bbl-s .bbl-trans { color: rgba(255,255,255,.55); border-top-color: rgba(255,255,255,.18); }
+.bbl-trans.show { display: block; }
+
+/* 말풍선 헤더: 텍스트 + 🌐 버튼 한 줄 */
+.bbl-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 6px;
+}
+.bbl-text { flex: 1; }
+
+/* 🌐 버튼 */
+.trans-btn {
+  flex-shrink: 0;
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: 12px;
+  cursor: pointer;
+  opacity: 0.35;
+  transition: opacity .15s;
+  line-height: 1;
+  margin-top: 1px;
+}
+.trans-btn:hover { opacity: 0.75; }
+.trans-btn.active { opacity: 1; }
+
+/* 퍼즐 카드 */
+.p-card {
+  background:var(--surf); border-radius:14px;
+  border:1px solid var(--bdr); overflow:hidden; flex-shrink:0;
+}
+.p-card-hd {
+  padding:9px 13px 7px; border-bottom:1px solid var(--bdr);
+  display:flex; align-items:center; justify-content:space-between;
+}
+.p-card-lbl { font-size:10px; font-weight:700; color:var(--text3); letter-spacing:.8px; text-transform:uppercase; }
+.g-badge {
+  background:var(--amb-l); color:#92400e;
+  font-size:10px; font-weight:700;
+  padding:2px 8px; border-radius:20px;
+  border:1px solid rgba(245,158,11,.2);
+}
+.p-hint { font-size:11.5px; color:var(--text2); padding:7px 13px 0; }
+.slot-wrap { padding:7px 10px 10px; }
+.slot-area {
+  min-height:44px; border:1.5px dashed var(--bdr);
+  border-radius:10px; padding:6px 8px;
+  display:flex; flex-wrap:wrap; gap:5px; align-items:center;
+  background:var(--bg); transition:border-color .25s, background .25s;
+}
+.slot-area.ok { border-color:var(--teal); background:var(--teal-l); }
+.slot-area.ng { border-color:var(--red);  background:var(--red-l); }
+.slot-ph { font-size:12px; color:var(--text3); padding:2px 4px; }
+
+.chip {
+  padding:6px 12px; border-radius:20px;
+  font-size:13px; font-weight:500;
+  font-family:'Noto Sans KR',sans-serif;
+  cursor:pointer; user-select:none;
+  transition:transform .1s, background .15s, opacity .15s;
+  border:1.5px solid transparent; white-space:nowrap;
+}
+.chip:active { transform:scale(.94); }
+.chip-s  { background:var(--navy); color:#fff; }
+.chip-s:hover { background:var(--navy2); }
+.chip-s.cor { background:var(--teal); color:#fff; cursor:default; }
+.chip-s.wrg { background:var(--red-l); color:var(--red); border-color:var(--red-t); text-decoration:line-through; cursor:default; }
+.chip-t  { background:var(--surf); color:var(--text); border-color:var(--bdr); box-shadow:0 2px 0 var(--bdr); }
+.chip-t:hover { background:#f5f7fa; transform:translateY(-1px); box-shadow:0 3px 0 var(--bdr); }
+.chip-t.used { opacity:.25; pointer-events:none; box-shadow:none; }
+
+.tray { background:var(--surf); border-top:1px solid var(--bdr); padding:10px 14px 12px; flex-shrink:0; }
+.tray-lbl { font-size:10px; font-weight:700; color:var(--text3); letter-spacing:.6px; margin-bottom:8px; }
+.tray-chips { display:flex; flex-wrap:wrap; gap:7px; }
+
+.btn-bar { background:var(--surf); border-top:1px solid var(--bdr); padding:10px 14px 14px; display:flex; gap:8px; flex-shrink:0; }
+.btn { border:none; border-radius:12px; font-family:inherit; font-size:14px; font-weight:600; cursor:pointer; padding:13px 0; transition:transform .1s; }
+.btn:active { transform:scale(.97); }
+.btn-hint  { flex:1; background:var(--bg); color:var(--text2); border:1.5px solid var(--bdr); font-size:13px; }
+.btn-hint:hover  { background:#e8ebf0; }
+.btn-hint:disabled { opacity:.35; cursor:default; }
+.btn-check { flex:2; background:var(--navy); color:#fff; }
+.btn-check:hover { background:var(--navy2); }
+.btn-check:disabled { opacity:.3; cursor:default; }
+.btn-next  { flex:1; background:var(--teal); color:#fff; }
+.btn-retry { flex:1; background:var(--bg); color:var(--text2); border:1.5px solid var(--bdr); font-size:13px; }
+
+/* 결과 말풍선 */
+.res-row { display:flex; gap:8px; align-items:flex-end; }
+.bbl-ok { background:var(--teal-l); border:1px solid var(--teal-t); border-radius:14px 14px 14px 4px; padding:10px 13px; font-size:13px; line-height:1.6; color:var(--text); max-width:260px; }
+.bbl-ng { background:var(--red-l); border:1px solid var(--red-t); border-radius:14px 14px 14px 4px; padding:10px 13px; font-size:13px; line-height:1.6; color:var(--text); max-width:260px; }
+.res-lbl { font-size:12px; font-weight:700; margin-bottom:4px; }
+.res-lbl.ok { color:var(--teal); }
+.res-lbl.ng { color:var(--red); }
+.res-sent { font-size:13px; font-weight:600; color:var(--teal); font-family:'Noto Sans KR',sans-serif; margin-bottom:6px; }
+.g-tip { font-size:12px; color:var(--text2); background:rgba(255,255,255,.75); border-radius:8px; padding:7px 9px; line-height:1.65; margin-top:6px; }
+.g-tip strong { color:var(--text); font-weight:700; }
+
+/* ════════════════════════════════
+   장소 완료 화면
+════════════════════════════════ */
+#completeScreen { overflow-y:auto; }
+
+.complete-hero {
+  background: var(--navy);
+  padding: 32px 24px 28px;
+  display:flex; flex-direction:column; align-items:center; gap:10px;
+  flex-shrink:0;
+}
+.complete-check {
+  width:60px; height:60px; border-radius:50%;
+  background: rgba(15,155,130,.3);
+  border: 2px solid rgba(15,155,130,.6);
+  display:flex; align-items:center; justify-content:center;
+  font-size:26px; color:#fff; margin-bottom:4px;
+}
+.complete-place { font-size:22px; font-weight:700; color:#fff; letter-spacing:-.5px; }
+.complete-sub-txt { font-size:13px; color:rgba(255,255,255,.55); text-align:center; }
+.complete-xp-big { font-size:42px; font-weight:700; color:#f0c060; letter-spacing:-2px; margin-top:4px; }
+.complete-xp-big span { font-size:16px; font-weight:500; color:rgba(255,255,255,.5); margin-left:4px; }
+
+.complete-body { padding:20px 20px 32px; display:flex; flex-direction:column; gap:14px; }
+
+.grammar-review-card {
+  background:var(--surf); border-radius:14px;
+  border:1px solid var(--bdr); padding:16px;
+}
+.gr-label { font-size:10px; font-weight:700; letter-spacing:.8px; text-transform:uppercase; color:var(--text3); margin-bottom:10px; }
+.gr-chips { display:flex; flex-wrap:wrap; gap:6px; }
+.gr-chip {
+  background:var(--teal-l); color:#0a6b58;
+  border:1px solid var(--teal-t);
+  border-radius:20px; padding:5px 13px;
+  font-size:12px; font-weight:600;
+}
+
+.stat-row { display:flex; gap:10px; }
+.stat-card {
+  flex:1; background:var(--surf);
+  border-radius:14px; border:1px solid var(--bdr);
+  padding:14px; text-align:center;
+}
+.stat-val { font-size:24px; font-weight:700; color:var(--text); }
+.stat-lbl { font-size:11px; color:var(--text2); margin-top:3px; }
+
+.btn-to-map {
+  width:100%; padding:15px;
+  background:var(--teal); color:#fff;
+  border:none; border-radius:14px;
+  font-family:inherit; font-size:15px; font-weight:700;
+  cursor:pointer; transition:transform .1s; letter-spacing:-.2px;
+}
+.btn-to-map:active { transform:scale(.98); }
+.btn-replay {
+  width:100%; padding:13px;
+  background:transparent; color:var(--text2);
+  border:1.5px solid var(--bdr); border-radius:14px;
+  font-family:inherit; font-size:14px; font-weight:600;
+  cursor:pointer;
+}
+
+/* ── XP 토스트 ── */
+.xp-toast {
+  position:fixed; top:210px;
+  left:50%; transform:translateX(-50%) translateY(-8px);
+  background:var(--navy); color:var(--amber);
+  font-size:18px; font-weight:700;
+  padding:10px 22px; border-radius:24px;
+  pointer-events:none; opacity:0;
+  transition:opacity .18s, transform .18s;
+  z-index:9999; white-space:nowrap;
+}
+.xp-toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+
+/* ── 핀 완료 애니메이션 ── */
+@keyframes pinPop { 0%{transform:scale(1)} 50%{transform:scale(1.4)} 100%{transform:scale(1)} }
+.pin-pop { animation: pinPop .4s ease; }
+
+/* ════════════════════════════════
+   이름 입력 화면
+════════════════════════════════ */
+#nameScreen {
+  align-items: center;
+  justify-content: center;
+  background: var(--navy);
+}
+.name-wrap {
+  display: flex; flex-direction: column; align-items: center;
+  padding: 40px 32px; gap: 28px; width: 100%;
+}
+.name-logo {
+  font-size: 52px; line-height: 1;
+}
+.name-title {
+  color: #fff; font-size: 24px; font-weight: 700;
+  text-align: center; letter-spacing: -.4px;
+}
+.name-sub {
+  color: rgba(255,255,255,.5); font-size: 13.5px;
+  text-align: center; line-height: 1.55;
+  margin-top: -12px;
+}
+.name-field-wrap {
+  width: 100%; display: flex; flex-direction: column; gap: 8px;
+}
+.name-label {
+  color: rgba(255,255,255,.6); font-size: 11px; font-weight: 600;
+  letter-spacing: .6px; text-transform: uppercase;
+}
+.name-input {
+  width: 100%;
+  background: rgba(255,255,255,.08);
+  border: 1.5px solid rgba(255,255,255,.15);
+  border-radius: 14px;
+  padding: 14px 18px;
+  font-size: 18px; font-weight: 600;
+  color: #fff;
+  font-family: 'Noto Sans KR', sans-serif;
+  outline: none;
+  transition: border-color .18s;
+  text-align: center;
+  letter-spacing: .5px;
+}
+.name-input::placeholder { color: rgba(255,255,255,.25); font-weight: 400; }
+.name-input:focus { border-color: var(--teal); }
+.name-start-btn {
+  width: 100%;
+  background: var(--teal);
+  color: #fff; font-size: 16px; font-weight: 700;
+  border: none; border-radius: 14px;
+  padding: 15px; cursor: pointer;
+  font-family: 'Noto Sans KR', sans-serif;
+  transition: opacity .15s, transform .12s;
+}
+.name-start-btn:hover { opacity: .9; }
+.name-start-btn:active { transform: scale(.98); }
+.name-start-btn:disabled { opacity: .35; cursor: default; }
+.name-hint {
+  color: rgba(255,255,255,.35); font-size: 12px;
+  text-align: center;
+}
+</style>
+</head>
+<body>
+
+<div class="xp-toast" id="xpToast"></div>
+
+<div class="phone">
+
+  <div class="status-bar">
+    <span class="s-time">9:41</span>
+    <div class="s-right">
+      <span class="s-xp" id="globalXp">0 XP</span>
+      <span class="s-title">서울 여행</span>
+    </div>
+  </div>
+
+  <!-- ════ 이름 입력 화면 ════ -->
+  <div class="screen active" id="nameScreen">
+    <div class="name-wrap">
+      <div class="name-logo">🗺️</div>
+      <div class="name-title">서울 여행에<br>오신 것을 환영해요!</div>
+      <div class="name-sub">한국어로 서울을 여행하며<br>새로운 표현을 익혀보세요.</div>
+      <div class="name-field-wrap">
+        <div class="name-label">이름 (Korean or English)</div>
+        <input class="name-input" id="nameInput" type="text" placeholder="예: 유리, Emily…"
+          maxlength="20" oninput="onNameInput()" onkeydown="if(event.key==='Enter')submitName()"/>
+      </div>
+      <button class="name-start-btn" id="nameStartBtn" disabled onclick="submitName()">
+        서울 여행 시작하기 →
+      </button>
+      <div class="name-hint">이름은 게임 내 대화에서 사용됩니다.</div>
+    </div>
+  </div>
+
+  <!-- ════ 지도 화면 ════ -->
+  <div class="screen" id="mapScreen">
+
+    <div class="map-header">
+      <div class="map-header-top">
+        <div class="map-greeting" id="mapGreeting">서울 여행 🗺️</div>
+        <div class="map-total-xp" id="mapXpBadge">0 XP</div>
+      </div>
+      <div class="map-sub" id="mapProgress">0 / 10 장소 완료</div>
+    </div>
+
+    <!-- 서울 일러스트 지도 -->
+    <div class="map-wrap" id="mapWrap">
+      <svg id="seoulMapMain" viewBox="50 22 280 170" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid slice">
+        <rect width="390" height="240" fill="#e4eef6"/>
+        <ellipse cx="170" cy="26"  rx="62" ry="26" fill="#c4d9a8" opacity=".75"/>
+        <ellipse cx="78"  cy="44"  rx="38" ry="22" fill="#c4d9a8" opacity=".65"/>
+        <ellipse cx="320" cy="58"  rx="32" ry="18" fill="#c4d9a8" opacity=".55"/>
+        <ellipse cx="42"  cy="190" rx="26" ry="16" fill="#c4d9a8" opacity=".5"/>
+        <ellipse cx="348" cy="210" rx="30" ry="16" fill="#c4d9a8" opacity=".5"/>
+        <path d="M0,178 C25,174 50,181 80,176 C108,171 125,179 155,174 C178,169 200,176 228,171 C255,166 278,174 308,169 C332,165 358,171 390,168"
+              fill="none" stroke="#a0c4e0" stroke-width="18" stroke-linecap="round"/>
+        <path d="M0,175 C25,171 50,178 80,173 C108,168 125,176 155,171 C178,166 200,173 228,168 C255,163 278,171 308,166 C332,162 358,168 390,165"
+              fill="none" stroke="#bdd8f0" stroke-width="6" stroke-linecap="round" opacity=".6"/>
+        <line x1="0" y1="52"  x2="390" y2="52"  stroke="#fff" stroke-width="1.2" opacity=".45"/>
+        <line x1="0" y1="80"  x2="390" y2="80"  stroke="#fff" stroke-width="2"   opacity=".65"/>
+        <line x1="0" y1="112" x2="390" y2="112" stroke="#fff" stroke-width="3"   opacity=".8"/>
+        <line x1="0" y1="140" x2="390" y2="140" stroke="#fff" stroke-width="1.5" opacity=".55"/>
+        <line x1="0" y1="196" x2="390" y2="196" stroke="#fff" stroke-width="2"   opacity=".6"/>
+        <line x1="52"  y1="0" x2="52"  y2="240" stroke="#fff" stroke-width="1.2" opacity=".45"/>
+        <line x1="100" y1="0" x2="100" y2="240" stroke="#fff" stroke-width="1.8" opacity=".6"/>
+        <line x1="148" y1="0" x2="148" y2="240" stroke="#fff" stroke-width="1.2" opacity=".45"/>
+        <line x1="178" y1="0" x2="178" y2="240" stroke="#fff" stroke-width="3"   opacity=".8"/>
+        <line x1="220" y1="0" x2="220" y2="240" stroke="#fff" stroke-width="1.5" opacity=".55"/>
+        <line x1="258" y1="0" x2="258" y2="240" stroke="#fff" stroke-width="2"   opacity=".65"/>
+        <line x1="318" y1="0" x2="318" y2="240" stroke="#fff" stroke-width="1.5" opacity=".5"/>
+        <rect x="104" y="84"  width="70" height="24" rx="3" fill="#d0dce8" opacity=".55"/>
+        <rect x="182" y="84"  width="70" height="24" rx="3" fill="#d0dce8" opacity=".55"/>
+        <rect x="104" y="116" width="70" height="21" rx="3" fill="#d0dce8" opacity=".5"/>
+        <rect x="182" y="116" width="70" height="21" rx="3" fill="#d0dce8" opacity=".5"/>
+        <rect x="262" y="84"  width="52" height="24" rx="3" fill="#d0dce8" opacity=".5"/>
+        <rect x="56"  y="84"  width="40" height="24" rx="3" fill="#d0dce8" opacity=".5"/>
+        <ellipse cx="128" cy="172" rx="22" ry="8" fill="#cce0b4" opacity=".85"/>
+        <!-- 경로선 (JS로 동적 업데이트) -->
+        <polyline id="routeMain" points="" fill="none" stroke="#0f9b82" stroke-width="2.5" stroke-dasharray="6,4" opacity=".8"/>
+        <!-- 핀들 (JS로 렌더링) -->
+        <g id="pinsMain"></g>
+      </svg>
+    </div>
+
+    <!-- 장소 목록 -->
+    <div class="loc-list" id="locList"></div>
+
+  </div>
+
+  <!-- ════ 진입 카드 화면 ════ -->
+  <div class="screen" id="entryScreen">
+    <div class="entry-map-mini">
+      <svg id="entryMapSvg" viewBox="65 5 270 112" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid slice">
+        <rect width="390" height="160" fill="#e4eef6"/>
+        <ellipse cx="170" cy="16" rx="62" ry="20" fill="#c4d9a8" opacity=".7"/>
+        <path d="M0,118 C25,114 50,121 80,116 C108,111 125,119 155,114 C178,109 200,116 228,111 C255,106 278,114 308,109 C332,105 358,111 390,108"
+              fill="none" stroke="#a0c4e0" stroke-width="14" stroke-linecap="round"/>
+        <line x1="0" y1="52"  x2="390" y2="52"  stroke="#fff" stroke-width="2" opacity=".6"/>
+        <line x1="0" y1="80"  x2="390" y2="80"  stroke="#fff" stroke-width="2.5" opacity=".75"/>
+        <line x1="178" y1="0" x2="178" y2="160" stroke="#fff" stroke-width="2.5" opacity=".75"/>
+        <line x1="258" y1="0" x2="258" y2="160" stroke="#fff" stroke-width="1.8" opacity=".6"/>
+        <polyline id="entryRoute" points="" fill="none" stroke="#0f9b82" stroke-width="2" stroke-dasharray="5,4" opacity=".75"/>
+        <g id="entryPins"></g>
+      </svg>
+      <!-- 지도 위 뒤로가기 버튼 -->
+      <button class="map-back-btn" onclick="showScreen('mapScreen','anim-down')">← 지도</button>
+    </div>
+    <div class="entry-body" id="entryBody"></div>
+    <div class="entry-btn-area">
+      <button class="btn-start" onclick="startPuzzle()">시작하기 →</button>
+    </div>
+  </div>
+
+  <!-- ════ 퍼즐 화면 ════ -->
+  <div class="screen" id="puzzleScreen">
+    <div class="puzzle-map-mini">
+      <svg id="puzzleMapSvg" viewBox="65 5 270 98" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid slice">
+        <rect width="390" height="140" fill="#e4eef6"/>
+        <ellipse cx="170" cy="14" rx="62" ry="18" fill="#c4d9a8" opacity=".7"/>
+        <path d="M0,100 C25,96 50,103 80,98 C108,93 125,101 155,96 C178,91 200,98 228,93 C255,88 278,96 308,91 C332,87 358,93 390,90"
+              fill="none" stroke="#a0c4e0" stroke-width="12" stroke-linecap="round"/>
+        <line x1="0" y1="46"  x2="390" y2="46"  stroke="#fff" stroke-width="1.8" opacity=".6"/>
+        <line x1="0" y1="70"  x2="390" y2="70"  stroke="#fff" stroke-width="2.5" opacity=".75"/>
+        <line x1="178" y1="0" x2="178" y2="140" stroke="#fff" stroke-width="2.5" opacity=".75"/>
+        <line x1="258" y1="0" x2="258" y2="140" stroke="#fff" stroke-width="1.8" opacity=".6"/>
+        <polyline id="puzzleRoute" points="" fill="none" stroke="#0f9b82" stroke-width="2" stroke-dasharray="5,4" opacity=".75"/>
+        <g id="puzzlePins"></g>
+      </svg>
+      <!-- 지도 위 뒤로가기 버튼 -->
+      <button class="map-back-btn" onclick="showScreen('entryScreen','anim-down')">← 장소 정보</button>
+    </div>
+    <div class="stage-bar">
+      <div>
+        <div class="s-name" id="puzzleStageName"></div>
+        <div class="s-sub"  id="puzzleStageSub"></div>
+      </div>
+      <div class="xp-pill" id="puzzleXpPill">0 XP</div>
+    </div>
+    <div class="prog-row" id="progRow"></div>
+    <div class="scroll-area" id="scrollArea"></div>
+    <div class="tray">
+      <div class="tray-lbl">순서대로 클릭하세요</div>
+      <div class="tray-chips" id="trayChips"></div>
+    </div>
+    <div class="btn-bar" id="btnBar">
+      <button class="btn btn-hint" id="btnHint" onclick="useHint()">힌트 (3)</button>
+      <button class="btn btn-check" id="btnCheck" onclick="checkAnswer()" disabled>확인하기</button>
+    </div>
+  </div>
+
+  <!-- ════ 장소 완료 화면 ════ -->
+  <div class="screen" id="completeScreen">
+    <div class="complete-hero">
+      <div class="complete-check">✓</div>
+      <div class="complete-place" id="completePlaceName"></div>
+      <div class="complete-sub-txt">모든 문장을 완성했어요!</div>
+      <div class="complete-xp-big" id="completeXpBig">0 <span>XP</span></div>
+    </div>
+    <div class="complete-body">
+      <div class="stat-row">
+        <div class="stat-card">
+          <div class="stat-val" id="statCorrect">0</div>
+          <div class="stat-lbl">정답</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-val" id="statHints">0</div>
+          <div class="stat-lbl">힌트 사용</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-val" id="statTotal">0 XP</div>
+          <div class="stat-lbl">누적 XP</div>
+        </div>
+      </div>
+      <div class="grammar-review-card">
+        <div class="gr-label">이 장소에서 배운 문법</div>
+        <div class="gr-chips" id="grChips"></div>
+      </div>
+      <button class="btn-to-map" onclick="returnToMap()">지도로 돌아가기 →</button>
+      <button class="btn-replay" onclick="replayStage()">다시 풀기</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ══════════════════════════════════════════
+// 데이터
+// ══════════════════════════════════════════
+
+/* 좌표 변환: x=(lng-126.80)/0.38*390, y=(37.70-lat)/0.28*H */
+const LOCATIONS = [
+  { id:'hongdae',   name:'홍대',          num:1,  x:119, y:97,  unit:'4–5과', desc:'카페·음료 주문',      grammar:['이에요/예요','은/는'] },
+  { id:'myeongdong',name:'명동',           num:2,  x:181, y:92,  unit:'5–6과', desc:'쇼핑·물건 고르기',    grammar:['이/가 아니에요','이/그/저'] },
+  { id:'gyeongbok', name:'경복궁',         num:3,  x:174, y:80,  unit:'7과',   desc:'한복 대여·위치 확인', grammar:['에 있어요','도'] },
+  { id:'hangang',   name:'한강공원',       num:4,  x:137, y:110, unit:'8과',   desc:'치킨·자리 잡기',      grammar:['아요/어요/여요','을/를'] },
+  { id:'gwangjang', name:'광장시장',       num:5,  x:207, y:86,  unit:'9과',   desc:'음식 고르기',          grammar:['-지 않다','ㅂ동사'] },
+  { id:'seongsu',   name:'성수동',         num:6,  x:259, y:103, unit:'10–11과',desc:'식당 주문',            grammar:['-을까요?','하고'] },
+  { id:'museum',    name:'국립중앙박물관', num:7,  x:177, y:113, unit:'11–12과',desc:'전시 관람',            grammar:['-으세요','부터 까지'] },
+  { id:'bukchon',   name:'북촌한옥마을',   num:8,  x:190, y:77,  unit:'13–14과',desc:'길 묻기',              grammar:['-고 싶다','에서'] },
+  { id:'ddp',       name:'DDP',            num:9,  x:218, y:93,  unit:'14–15과',desc:'야경·쇼핑',             grammar:['과/와','에2'] },
+  { id:'bukhansan', name:'북한산',         num:10, x:174, y:38,  unit:'15과',  desc:'등산 대화',            grammar:['에게'] },
+];
+
+// 장소별 진입 대화 (퍼즐 데이터와 분리)
+const ENTRY_INTROS = {
+  hongdae: {
+    messages: [
+      { type:'friend', text:'안녕하세요! 저는 김연세예요. 😊' },
+      { type:'self',   text:'안녕하세요! 저는 [이름]이에요.' },
+      { type:'friend', text:'반가워요! 같이 카페 가요!' },
+    ]
+  },
+  myeongdong: {
+    messages: [
+      { type:'friend', text:'명동에 왔어! 여기 쇼핑 천국이야 🛍️' },
+      { type:'self',   text:'와, 가게가 정말 많아요!' },
+      { type:'friend', text:'뭐 사고 싶어? 같이 골라보자.' },
+    ]
+  },
+  gyeongbok: {
+    messages: [
+      { type:'friend', text:'경복궁 도착! 여기서 <strong>한복</strong>도 빌려 입을 수 있어 😊' },
+      { type:'self',   text:'정말요? 완전 좋아요!' },
+      { type:'friend', text:'근데 먼저 주변 좀 파악해보자.' },
+    ]
+  },
+  hangang: {
+    messages: [
+      { type:'friend', text:'한강이다! 여기서 치킨 먹어야지 🍗' },
+      { type:'self',   text:'저도 배고파요!' },
+      { type:'friend', text:'자리 잡고 주문해보자.' },
+    ]
+  },
+  gwangjang: {
+    messages: [
+      { type:'friend', text:'광장시장! 여기 먹거리 진짜 많아 😋' },
+      { type:'self',   text:'냄새 너무 좋아요!' },
+      { type:'friend', text:'뭐가 먹고 싶어? 같이 골라보자.' },
+    ]
+  },
+  seongsu: {
+    messages: [
+      { type:'friend', text:'성수동 왔어! 요즘 핫한 동네야 ✨' },
+      { type:'self',   text:'카페도 많고 예쁘다!' },
+      { type:'friend', text:'저기 식당 들어가볼까?' },
+    ]
+  },
+  museum: {
+    messages: [
+      { type:'friend', text:'국립중앙박물관이야! 한국 역사 다 있어 🏛️' },
+      { type:'self',   text:'엄청 크다!' },
+      { type:'friend', text:'1층부터 구경해보자.' },
+    ]
+  },
+  bukchon: {
+    messages: [
+      { type:'friend', text:'북촌한옥마을이야. 전통 한옥이 진짜 많아 🏯' },
+      { type:'self',   text:'사진 찍고 싶어요!' },
+      { type:'friend', text:'골목길 같이 걸어보자.' },
+    ]
+  },
+  ddp: {
+    messages: [
+      { type:'friend', text:'DDP야! 밤에 오면 야경이 진짜 예뻐 🌙' },
+      { type:'self',   text:'건물 모양이 특이해요!' },
+      { type:'friend', text:'구경하고 쇼핑도 하자.' },
+    ]
+  },
+  bukhansan: {
+    messages: [
+      { type:'friend', text:'북한산 등산 출발! 힘들어도 포기하지 마 💪' },
+      { type:'self',   text:'열심히 해볼게요!' },
+      { type:'friend', text:'천천히 올라가면서 얘기하자.' },
+    ]
+  },
+};
+
+const STAGE_PUZZLES = {
+
+  // ── 1. 홍대 카페 | 4–5과 | 이에요/예요, 은/는, 이/가 아니에요 ──
+  hongdae: [
+    {
+      friendMsg:'안녕하세요! 저는 김연세예요. 😊', friendMsgT:'Hello! I\'m Kim Yonsei. 😊',
+      selfMsg:null, selfMsgT:null,
+      friendMsg2:'이름을 말해봐요!', friendMsg2T:'Try saying your name!',
+      hintText:'처음 만난 자리에서 이름을 소개하는 상황이에요',
+      answer:['저는','[이름]이에요.'], distractors:['저가','[이름]예요?','이름이에요.'],
+      grammar:'이에요/예요',
+      tip:'<strong>저는 N이에요/예요</strong><br>자음 끝: 학생<strong>이에요</strong><br>모음 끝: 유리<strong>예요</strong>',
+    },
+    {
+      friendMsg:'반가워요! 어느 나라 사람이에요?', friendMsgT:'Nice to meet you! Where are you from?',
+      selfMsg:null, selfMsgT:null,
+      friendMsg2:'나라를 말해봐요!', friendMsg2T:'Say your country!',
+      hintText:'처음 만난 자리에서 국적을 소개하는 상황이에요',
+      answer:['저는','미국','사람이에요.'], distractors:['저가','미국','사람이에요?','사람예요.'],
+      grammar:'은/는',
+      tip:'<strong>저는 N 사람이에요</strong><br>저<strong>는</strong> 미국 사람이에요.<br>"은/는"은 자기 소개할 때 써요.',
+    },
+    {
+      friendMsg:'저는 학생이에요. 직업이 뭐예요?', friendMsgT:'I\'m a student. What is your job?',
+      selfMsg:null, selfMsgT:null,
+      friendMsg2:'직업을 말해봐요!', friendMsg2T:'Say your job!',
+      hintText:'처음 만난 자리에서 직업을 소개하는 상황이에요',
+      answer:['저는','의사예요.'], distractors:['저가','의사이에요?','의사예요?'],
+      grammar:'은/는, 이에요/예요',
+      tip:'<strong>저는 N이에요/예요</strong><br>저<strong>는</strong> 의사<strong>예요</strong>. (모음 끝)<br>저<strong>는</strong> 학생<strong>이에요</strong>. (자음 끝)',
+    },
+    {
+      friendMsg:'저 사람이 선생님이에요?', friendMsgT:'Is that person a teacher?',
+      selfMsg:null, selfMsgT:null,
+      friendMsg2:'아니라고 말해봐요!', friendMsg2T:'Say no!',
+      hintText:'저 사람의 직업을 부정하는 상황이에요',
+      answer:['아니요,','선생님이','아니에요.'], distractors:['네,','선생님이에요.','아니에요?'],
+      grammar:'이/가 아니에요',
+      tip:'<strong>아니요, N이/가 아니에요</strong><br>선생님<strong>이 아니에요</strong>.<br>부정: 아니요 + ~이/가 아니에요',
+    },
+  ],
+
+  // ── 2. 명동 | 5–6과 | 이/가 아니에요, 이/그/저 ──
+  myeongdong: [
+    {
+      friendMsg:'저기 가방 봐요! 저게 뭐예요?', friendMsgT:'Look at that bag over there! What is that?',
+      selfMsg:null, selfMsgT:null,
+      friendMsg2:'저것이 뭔지 말해봐요!', friendMsg2T:'Say what that is!',
+      hintText:'멀리 있는 물건을 가리키는 상황이에요',
+      answer:['저것은','제','가방이에요.'], distractors:['이것은','제','가방이에요?','저것이'],
+      grammar:'이/그/저',
+      tip:'<strong>이것</strong> (here) / <strong>그것</strong> (near you) / <strong>저것</strong> (over there)<br>저것<strong>은</strong> 제 가방이에요.',
+    },
+    {
+      friendMsg:'이 책 연세 씨 거예요?', friendMsgT:'Is this book yours, Yonsei?',
+      selfMsg:null, selfMsgT:null,
+      friendMsg2:'아니라고 말해봐요!', friendMsg2T:'Say it\'s not yours!',
+      hintText:'이 물건이 내 것이 아니라고 말하는 상황이에요',
+      answer:['이것은','제','책이','아니에요.'], distractors:['이것이','제','책이에요.','아니에요?'],
+      grammar:'이/가 아니에요',
+      tip:'<strong>N이/가 아니에요</strong><br>제 책<strong>이 아니에요</strong>.<br>자음 끝: ~이 아니에요',
+    },
+    {
+      friendMsg:'저 사람이 의사예요?', friendMsgT:'Is that person a doctor?',
+      selfMsg:null, selfMsgT:null,
+      friendMsg2:'아니라고 말해봐요!', friendMsg2T:'Say no!',
+      hintText:'저 사람의 직업을 부정하는 상황이에요',
+      answer:['존슨','씨는','의사가','아니에요.'], distractors:['존슨','씨는','의사가','아니에요?','의사예요.'],
+      grammar:'이/가 아니에요',
+      tip:'<strong>모음 뒤: ~가 아니에요</strong><br>의사<strong>가 아니에요</strong>. (의사 → 모음 끝)<br>자음 뒤: ~이 아니에요',
+    },
+    {
+      friendMsg:'이것 교과서예요?', friendMsgT:'Is this a textbook?',
+      selfMsg:null, selfMsgT:null,
+      friendMsg2:'아니라고 말해봐요!', friendMsg2T:'Say it\'s not!',
+      hintText:'물건이 교과서가 아니라고 말하는 상황이에요',
+      answer:['이것은','교과서가','아니에요.'], distractors:['이것이','교과서예요.','아니에요?'],
+      grammar:'이/그/저, 이/가 아니에요',
+      tip:'<strong>이것은 N이/가 아니에요</strong><br>이것<strong>은</strong> 교과서<strong>가 아니에요</strong>.<br>모음 끝 명사 뒤: ~<strong>가</strong> 아니에요',
+    },
+  ],
+
+  // ── 3. 경복궁 | 7과 | 에 있어요, 도 ──
+  gyeongbok: [
+    {
+      friendMsg:'경복궁에 도착했어! 지갑 잘 챙겼어?', friendMsgT:'We\'re at Gyeongbokgung! Did you keep your wallet safe?',
+      selfMsg:'네, 가방에 있어요!', selfMsgT:'Yes, it\'s in my bag!',
+      friendMsg2:'지갑이 어디 있는지 말해봐요!', friendMsg2T:'Say where your wallet is!',
+      hintText:'가방 안에 지갑이 있는 상황이에요',
+      answer:['지갑이','가방에','있어요.'], distractors:['지갑을','가방을','있어요?'],
+      grammar:'~에 있어요',
+      tip:'<strong>N이/가 N에 있어요</strong><br>지갑<strong>이</strong> 가방<strong>에</strong> 있어요.<br>물건 위치를 말할 때.',
+    },
+    {
+      friendMsg:'저기 매표소 보여? 화장실도 있을 것 같아!', friendMsgT:'See the ticket booth? There might be a restroom too!',
+      selfMsg:null, selfMsgT:null,
+      friendMsg2:'직원한테 물어봐요!', friendMsg2T:'Ask the staff!',
+      hintText:'매표소 직원 앞에 서 있어요',
+      answer:['화장실이','어디에','있어요?'], distractors:['화장실을','어디가','없어요?'],
+      grammar:'~에 있어요?',
+      tip:'<strong>N이/가 어디에 있어요?</strong><br>화장실<strong>이</strong> 어디에 <strong>있어요?</strong><br>장소를 물을 때.',
+    },
+    {
+      friendMsg:'저기 기념품 가게 있다! 연필도 팔아.', friendMsgT:'There\'s a souvenir shop! They sell pencils.',
+      selfMsg:'볼펜도 있어요?', selfMsgT:'Do they have pens too?',
+      friendMsg2:'들어가서 확인해봐요!', friendMsg2T:'Go in and check!',
+      hintText:'가게 안에 연필과 볼펜이 모두 있네요',
+      answer:['연필이','있어요.','볼펜도','있어요.'], distractors:['연필을','볼펜에','없어요.'],
+      grammar:'도',
+      tip:'<strong>N도</strong> = N too<br>연필이 있어요. 볼펜<strong>도</strong> 있어요.<br>앞 내용에 추가할 때.',
+    },
+    {
+      friendMsg:'배고프지 않아? 근처 식당 찾아보자!', friendMsgT:'Aren\'t you hungry? Let\'s find a restaurant!',
+      selfMsg:null, selfMsgT:null,
+      friendMsg2:'식당이 어디 있는지 말해봐요!', friendMsg2T:'Say where the restaurant is!',
+      hintText:'서점 근처에 식당이 있어요',
+      answer:['식당이','서점','근처에','있어요.'], distractors:['식당을','근처가','있어요?'],
+      grammar:'~에 있어요',
+      tip:'<strong>N이/가 장소에 있어요</strong><br>식당<strong>이</strong> 서점 근처<strong>에</strong> 있어요.',
+    },
+  ],
+
+  // ── 4. 한강공원 | 8과 | 아요/어요/여요, 을/를 ──
+  hangang: [
+    {
+      friendMsg:'한강이다! 치킨 시키자 🍗', friendMsgT:'Han River! Let\'s order chicken 🍗',
+      selfMsg:null, selfMsgT:null,
+      friendMsg2:'뭐 먹는지 말해봐요!', friendMsg2T:'Say what you\'re eating!',
+      hintText:'한강에서 먹을 메뉴를 말하는 상황이에요',
+      answer:['점심에','김밥을','먹어요.'], distractors:['저녁에','김밥이','먹어요?'],
+      grammar:'을/를, 아요/어요',
+      tip:'<strong>N을/를 V아요/어요</strong><br>김밥<strong>을</strong> 먹<strong>어요</strong>.<br>목적어 + 동사',
+    },
+    {
+      friendMsg:'저기 친구가 커피 마시고 있어.', friendMsgT:'My friend is drinking coffee over there.',
+      selfMsg:null, selfMsgT:null,
+      friendMsg2:'친구가 뭐 하는지 말해봐요!', friendMsg2T:'Say what the friend is doing!',
+      hintText:'친구가 무엇을 마시는지 말하는 상황이에요',
+      answer:['친구가','커피를','마셔요.'], distractors:['친구는','커피가','마셔요?'],
+      grammar:'이/가, 을/를',
+      tip:'<strong>마시다 → 마셔요</strong><br>커피<strong>를</strong> 마셔요.<br>주어: ~가 / 목적어: ~를',
+    },
+    {
+      friendMsg:'한국어 공부해? 잘 되고 있어?', friendMsgT:'Are you studying Korean? Going well?',
+      selfMsg:null, selfMsgT:null,
+      friendMsg2:'한국어 공부한다고 말해봐요!', friendMsg2T:'Say you\'re studying Korean!',
+      hintText:'한국어를 공부하고 있다고 말하는 상황이에요',
+      answer:['저는','한국어를','공부해요.'], distractors:['저가','한국어가','공부해요?'],
+      grammar:'을/를, 여요',
+      tip:'<strong>공부하다 → 공부해요</strong><br>한국어<strong>를</strong> 공부해요.<br>하다 동사: 하다 → <strong>해요</strong>',
+    },
+    {
+      friendMsg:'저기 사람들이 뭐 읽고 있어?', friendMsgT:'What are those people reading over there?',
+      selfMsg:null, selfMsgT:null,
+      friendMsg2:'친구가 뭐 하는지 말해봐요!', friendMsg2T:'Say what the friend is doing!',
+      hintText:'잔디밭에서 친구가 책을 읽고 있어요',
+      answer:['친구가','책을','읽어요.'], distractors:['친구는','책이','읽어요?'],
+      grammar:'이/가, 을/를',
+      tip:'<strong>읽다 → 읽어요</strong><br>책<strong>을</strong> 읽어요.<br>자음 끝 동사: ~어요',
+    },
+  ],
+
+  // ── 5. 광장시장 | 9과 | -지 않다, ㅂ불규칙 ──
+  gwangjang: [
+    {
+      friendMsg:'여기 김치 한번 먹어봐! 맛있어!', friendMsgT:'Try the kimchi here! It\'s delicious!',
+      selfMsg:null, selfMsgT:null,
+      friendMsg2:'김치 안 먹는다고 말해봐요!', friendMsg2T:'Say you don\'t eat kimchi!',
+      hintText:'음식을 먹지 않는다고 말하는 상황이에요',
+      answer:['저는','김치를','먹지','않아요.'], distractors:['저는','김치가','먹지','않아요?'],
+      grammar:'-지 않다',
+      tip:'<strong>동사 어간 + -지 않아요</strong><br>먹다 → 먹<strong>지 않아요</strong>.',
+    },
+    {
+      friendMsg:'여기 음식 매워 보여. 괜찮아?', friendMsgT:'The food here looks spicy. Are you okay?',
+      selfMsg:null, selfMsgT:null,
+      friendMsg2:'맵지 않다고 말해봐요!', friendMsg2T:'Say it\'s not spicy!',
+      hintText:'음식이 맵지 않다고 말하는 상황이에요',
+      answer:['한국','음식이','맵지','않아요.'], distractors:['한국','음식은','맵지','않아요?'],
+      grammar:'-지 않다, ㅂ불규칙',
+      tip:'<strong>맵다 → 맵지 않아요</strong><br>-지 앞에서는 ㅂ이 그대로 유지돼요.<br>맵<strong>지 않아요</strong> (ㅂ 유지)<br>cf. 모음 앞: 맵다 → 매<strong>워요</strong> (ㅂ→w)',
+    },
+    {
+      friendMsg:'오늘 날씨 덥지 않아?', friendMsgT:'Isn\'t it hot today?',
+      selfMsg:null, selfMsgT:null,
+      friendMsg2:'덥지 않다고 말해봐요!', friendMsg2T:'Say it\'s not hot!',
+      hintText:'날씨가 덥지 않다고 말하는 상황이에요',
+      answer:['날씨가','덥지','않아요.'], distractors:['날씨는','덥지','않아요?','더워요.'],
+      grammar:'-지 않다, ㅂ불규칙',
+      tip:'<strong>덥다 → 덥지 않아요</strong><br>-지 앞에서는 ㅂ이 그대로예요.<br>덥<strong>지 않아요</strong> (ㅂ 유지)<br>cf. 모음 앞: 덥다 → 더<strong>워요</strong> (ㅂ→w)',
+    },
+    {
+      friendMsg:'시장에 사람이 많지 않아?', friendMsgT:'Aren\'t there many people in the market?',
+      selfMsg:null, selfMsgT:null,
+      friendMsg2:'많지 않다고 말해봐요!', friendMsg2T:'Say there aren\'t many!',
+      hintText:'시장에 사람이 많지 않다고 말하는 상황이에요',
+      answer:['시장에','사람이','많지','않아요.'], distractors:['시장에','사람을','많지','않아요?'],
+      grammar:'-지 않다',
+      tip:'<strong>많다 → 많지 않아요</strong><br>시장에 사람<strong>이</strong> 많<strong>지 않아요</strong>.',
+    },
+  ],
+
+  // ── 6. 성수동 | 10–11과 | -을까요?, 하고 ──
+  seongsu: [
+    {
+      friendMsg:'여기 유명한 카페야! 뭐 마실까?', friendMsgT:'This is a famous café! What shall we drink?',
+      selfMsg:null, selfMsgT:null,
+      friendMsg2:'음료를 제안해봐요!', friendMsg2T:'Suggest a drink!',
+      hintText:'카페에서 음료를 고르는 상황이에요',
+      answer:['커피를','마실까요?'], distractors:['커피가','마실까요.','마셔요?'],
+      grammar:'-을까요?',
+      tip:'<strong>동사 어간 + -을까요?/ㄹ까요?</strong><br>마시다 → 마실<strong>까요?</strong><br>제안·의견을 물을 때.',
+    },
+    {
+      friendMsg:'점심 먹으러 갈까? 뭐 먹을까?', friendMsgT:'Shall we go eat lunch? What should we eat?',
+      selfMsg:null, selfMsgT:null,
+      friendMsg2:'불고기 먹을지 제안해봐요!', friendMsg2T:'Suggest having bulgogi!',
+      hintText:'식당에서 메뉴를 제안하는 상황이에요',
+      answer:['불고기를','먹을까요?'], distractors:['불고기가','먹을까요.','먹어요?'],
+      grammar:'-을까요?',
+      tip:'<strong>먹다 → 먹을까요?</strong><br>받침 있는 동사: ~을까요?<br>불고기를 먹<strong>을까요?</strong>',
+    },
+    {
+      friendMsg:'이 카페 메뉴에 뭐 있어?', friendMsgT:'What\'s on the menu here?',
+      selfMsg:null, selfMsgT:null,
+      friendMsg2:'커피하고 물 있다고 말해봐요!', friendMsg2T:'Say there\'s coffee and water!',
+      hintText:'메뉴에 있는 음료를 말하는 상황이에요',
+      answer:['커피하고','물이','있어요.'], distractors:['커피와','물이','있어요?','없어요.'],
+      grammar:'하고',
+      tip:'<strong>N하고 N</strong> = N and N (구어체)<br>커피<strong>하고</strong> 물이 있어요.<br>말할 때는 "와/과"보다 "하고".',
+    },
+    {
+      friendMsg:'오늘 점심 뭐 먹을까?', friendMsgT:'What shall we eat for lunch today?',
+      selfMsg:null, selfMsgT:null,
+      friendMsg2:'삼겹살하고 된장찌개 먹어요!', friendMsg2T:'Say you eat samgyeopsal and doenjang jjigae!',
+      hintText:'점심 메뉴를 제안하는 상황이에요',
+      answer:['삼겹살하고','된장찌개를','먹어요.'], distractors:['삼겹살을','된장찌개하고','먹어요?'],
+      grammar:'하고, 을/를',
+      tip:'<strong>N하고 N을/를 V</strong><br>삼겹살<strong>하고</strong> 된장찌개<strong>를</strong> 먹어요.',
+    },
+  ],
+
+  // ── 7. 국립중앙박물관 | 11–12과 | -으세요/-세요, 부터 까지 ──
+  museum: [
+    {
+      friendMsg:'저기 직원 있어! 뭔가 물어봐.', friendMsgT:'There\'s a staff member! Ask something.',
+      selfMsg:null, selfMsgT:null,
+      friendMsg2:'기다리라고 말해봐요!', friendMsg2T:'Say to wait!',
+      hintText:'직원에게 잠깐 기다려 달라고 하는 상황이에요',
+      answer:['잠깐만','기다리세요.'], distractors:['잠깐이','기다려요.','기다리세요?'],
+      grammar:'-으세요/-세요',
+      tip:'<strong>기다리다 → 기다리세요</strong><br>모음 끝 동사: ~세요<br>기다리<strong>세요</strong>.',
+    },
+    {
+      friendMsg:'여기 빈자리 있어! 잠깐 앉자.', friendMsgT:'There\'s an empty seat here! Let\'s sit for a moment.',
+      selfMsg:null, selfMsgT:null,
+      friendMsg2:'앉으라고 말해봐요!', friendMsg2T:'Say to sit down!',
+      hintText:'상대방에게 앉으라고 안내하는 상황이에요',
+      answer:['여기','앉으세요.'], distractors:['여기를','앉아요.','앉으세요?'],
+      grammar:'-으세요/-세요',
+      tip:'<strong>앉다 → 앉으세요</strong><br>자음 끝 동사: ~으세요<br>앉<strong>으세요</strong>.',
+    },
+    {
+      friendMsg:'박물관이 몇 층까지 있어?', friendMsgT:'How many floors does the museum have?',
+      selfMsg:null, selfMsgT:null,
+      friendMsg2:'몇 층부터 몇 층까지 있는지 말해봐요!', friendMsg2T:'Say which floors there are!',
+      hintText:'박물관 층 범위를 설명하는 상황이에요',
+      answer:['1층부터','3층까지','전시가','있어요.'], distractors:['1층까지','3층부터','전시가','있어요?'],
+      grammar:'부터 까지',
+      tip:'<strong>N부터 N까지</strong> = from N to N<br>1층<strong>부터</strong> 3층<strong>까지</strong> 있어요.',
+    },
+    {
+      friendMsg:'박물관 몇 시부터 몇 시까지야?', friendMsgT:'What are the museum\'s opening hours?',
+      selfMsg:null, selfMsgT:null,
+      friendMsg2:'운영 시간을 말해봐요!', friendMsg2T:'Say the opening hours!',
+      hintText:'박물관 운영 시간을 말하는 상황이에요 (열 시~여섯 시)',
+      answer:['열','시부터','여섯','시까지예요.'], distractors:['열','시까지','여섯','시부터예요.'],
+      grammar:'부터 까지',
+      tip:'<strong>N시부터 N시까지</strong><br>열 시<strong>부터</strong> 여섯 시<strong>까지</strong>예요.',
+    },
+  ],
+
+  // ── 8. 북촌한옥마을 | 13–14과 | -고 싶다, 에서 ──
+  bukchon: [
+    {
+      friendMsg:'북촌이야! 골목에서 사진 찍고 싶지 않아?', friendMsgT:'This is Bukchon! Don\'t you want to take photos in the alley?',
+      selfMsg:null, selfMsgT:null,
+      friendMsg2:'골목에서 사진 찍고 싶다고 말해봐요!', friendMsg2T:'Say you want to take photos in the alley!',
+      hintText:'골목에서 사진을 찍고 싶은 상황이에요',
+      answer:['골목에서','사진을','찍고','싶어요.'], distractors:['골목에','사진이','찍고','싶어요?'],
+      grammar:'-고 싶다, 에서',
+      tip:'<strong>에서 + -고 싶어요</strong><br>골목<strong>에서</strong> 사진을 찍<strong>고 싶어요</strong>.',
+    },
+    {
+      friendMsg:'점심 뭐 먹고 싶어?', friendMsgT:'What do you want to eat for lunch?',
+      selfMsg:null, selfMsgT:null,
+      friendMsg2:'먹고 싶은 음식을 말해봐요!', friendMsg2T:'Say what you want to eat!',
+      hintText:'먹고 싶은 음식을 말하는 상황이에요',
+      answer:['저는','불고기를','먹고','싶어요.'], distractors:['저가','불고기가','먹고','싶어요?'],
+      grammar:'-고 싶다',
+      tip:'<strong>동사 어간 + -고 싶어요</strong><br>불고기<strong>를</strong> 먹<strong>고 싶어요</strong>.',
+    },
+    {
+      friendMsg:'북촌에서 뭐 하고 싶어?', friendMsgT:'What do you want to do in Bukchon?',
+      selfMsg:null, selfMsgT:null,
+      friendMsg2:'한옥 카페에서 쉬고 싶다고 말해봐요!', friendMsg2T:'Say you want to rest at a hanok café!',
+      hintText:'한옥 카페에서 쉬고 싶은 상황이에요',
+      answer:['한옥','카페에서','쉬고','싶어요.'], distractors:['한옥','카페에','쉬고','싶어요?'],
+      grammar:'-고 싶다, 에서',
+      tip:'<strong>장소에서 V고 싶어요</strong><br>카페<strong>에서</strong> 쉬<strong>고 싶어요</strong>.',
+    },
+    {
+      friendMsg:'기념품 어디서 사고 싶어?', friendMsgT:'Where do you want to buy souvenirs?',
+      selfMsg:null, selfMsgT:null,
+      friendMsg2:'어디에서 사고 싶은지 말해봐요!', friendMsg2T:'Say where you want to buy them!',
+      hintText:'기념품을 사고 싶은 장소를 말하는 상황이에요',
+      answer:['북촌에서','기념품을','사고','싶어요.'], distractors:['북촌에','기념품이','사고','싶어요?'],
+      grammar:'에서, -고 싶다',
+      tip:'<strong>장소에서 N을/를 V고 싶어요</strong><br>북촌<strong>에서</strong> 기념품을 사<strong>고 싶어요</strong>.',
+    },
+  ],
+
+  // ── 9. DDP | 14–15과 | 과/와, 에(시간) ──
+  ddp: [
+    {
+      friendMsg:'DDP야! 여기 옷 가게 엄청 많아!', friendMsgT:'This is DDP! So many clothing stores here!',
+      selfMsg:null, selfMsgT:null,
+      friendMsg2:'옷 가게와 신발 가게 있다고 말해봐요!', friendMsg2T:'Say there are clothing and shoe stores!',
+      hintText:'두 가게가 있다고 말하는 상황이에요',
+      answer:['옷','가게와','신발','가게가','많아요.'], distractors:['옷','가게하고','신발','가게와','많아요?'],
+      grammar:'과/와',
+      tip:'<strong>N와/과 N</strong> = N and N<br>옷 가게<strong>와</strong> 신발 가게가 많아요.<br>모음 뒤: ~와 / 자음 뒤: ~과',
+    },
+    {
+      friendMsg:'DDP 몇 시에 열어?', friendMsgT:'What time does DDP open?',
+      selfMsg:null, selfMsgT:null,
+      friendMsg2:'열 시에 연다고 말해봐요!', friendMsg2T:'Say it opens at 10!',
+      hintText:'DDP 오픈 시간을 말하는 상황이에요',
+      answer:['열','시에','열어요.'], distractors:['열','시부터','열어요?','닫아요.'],
+      grammar:'에(시간)',
+      tip:'<strong>N시에 V</strong><br>열 시<strong>에</strong> 열어요.<br>시각 뒤에는 "에".',
+    },
+    {
+      friendMsg:'DDP 보통 몇 시에 와?', friendMsgT:'What time do you usually come to DDP?',
+      selfMsg:null, selfMsgT:null,
+      friendMsg2:'두 시에 온다고 말해봐요!', friendMsg2T:'Say you come at 2!',
+      hintText:'보통 오는 시간을 말하는 상황이에요',
+      answer:['두','시에','와요.'], distractors:['두','시부터','와요?','가요.'],
+      grammar:'에(시간)',
+      tip:'<strong>N시에 V</strong><br>두 시<strong>에</strong> 와요.<br>시각 뒤에는 "에".',
+    },
+  ],
+
+  // ── 10. 북한산 | 15과 | 에게, 복습 ──
+  bukhansan: [
+    {
+      friendMsg:'북한산 등산 출발! 힘들어?', friendMsgT:'Bukhansan hike, let\'s go! Are you tired?',
+      selfMsg:null, selfMsgT:null,
+      friendMsg2:'친구에게 물 준다고 말해봐요!', friendMsg2T:'Say you give water to your friend!',
+      hintText:'친구에게 물을 주는 상황이에요',
+      answer:['친구에게','물을','줘요.'], distractors:['친구한테를','물이','줘요?'],
+      grammar:'에게',
+      tip:'<strong>N에게 N을/를 V</strong><br>친구<strong>에게</strong> 물<strong>을</strong> 줘요.<br>"에게"는 사람에게 방향을 나타내요.',
+    },
+    {
+      friendMsg:'저기 산악회 아저씨한테 길 물어봐!', friendMsgT:'Ask that hiking club uncle for directions!',
+      selfMsg:null, selfMsgT:null,
+      friendMsg2:'아저씨에게 물어본다고 말해봐요!', friendMsg2T:'Say you\'re asking the uncle!',
+      hintText:'산악회 아저씨에게 길을 묻는 상황이에요',
+      answer:['아저씨에게','길을','물어봐요.'], distractors:['아저씨한테를','길이','물어봐요?'],
+      grammar:'에게',
+      tip:'<strong>N에게 V</strong><br>아저씨<strong>에게</strong> 길을 물어봐요.<br>"에게" = "한테" (구어체)',
+    },
+    {
+      friendMsg:'정상까지 얼마나 걸려?', friendMsgT:'How long does it take to the summit?',
+      selfMsg:null, selfMsgT:null,
+      friendMsg2:'걸리는 시간을 말해봐요!', friendMsg2T:'Say how long it takes!',
+      hintText:'정상까지 소요 시간을 말하는 상황이에요',
+      answer:['세','시간쯤','걸려요.'], distractors:['세','시간이','걸려요?','네','시간부터'],
+      grammar:'에게 (복습)',
+      tip:'<strong>N시간쯤 걸려요</strong><br>세 시간<strong>쯤</strong> 걸려요.<br>"쯤" = approximately',
+    },
+    {
+      friendMsg:'저기 가게 있어! 이거 얼마야?', friendMsgT:'There\'s a shop! How much is this?',
+      selfMsg:null, selfMsgT:null,
+      friendMsg2:'가격을 물어봐요!', friendMsg2T:'Ask the price!',
+      hintText:'산 위 매점에서 가격을 물어보는 상황이에요',
+      answer:['이거','얼마예요?'], distractors:['이거','얼마이에요.','얼마예요.'],
+      grammar:'이에요/예요?',
+      tip:'<strong>이거 얼마예요?</strong><br>얼마<strong>예요?</strong> (모음 뒤 → 예요)',
+    },
+  ],
+
+};
+
+// ══════════════════════════════════════════
+// 앱 상태
+// ══════════════════════════════════════════
+const state = {
+  totalXp: 0,
+  playerName: '',          // 플레이어 이름
+  completed: new Set(),   // 완료된 장소 id
+  currentLoc: null,       // 현재 진행 중인 장소 id
+  puzzleIdx: 0,
+  slotWords: [],
+  hintsLeft: 3,
+  hintUsed: false,
+  answered: false,
+  sessionXp: 0,           // 이번 장소에서 획득한 XP
+  sessionCorrect: 0,
+  sessionHints: 0,
+};
+
+// ══════════════════════════════════════════
+// 이름 입력
+// ══════════════════════════════════════════
+function onNameInput() {
+  const val = document.getElementById('nameInput').value.trim();
+  document.getElementById('nameStartBtn').disabled = val.length === 0;
+}
+
+function endsWithBatchim(str) {
+  if (!str) return false;
+  const code = str.charCodeAt(str.length - 1) - 0xAC00;
+  if (code < 0 || code > 11171) return false;
+  return code % 28 !== 0;
+}
+
+// [이름]이에요. / [이름]예요? 토큰을 실제 이름으로 치환
+function resolveNameToken(token) {
+  if (!state.playerName) return token;
+  const name = state.playerName;
+  const hasBatchim = endsWithBatchim(name);
+  return token
+    .replace(/\[이름\]이에요\./g,  hasBatchim ? name + '이에요.' : name + '예요.')
+    .replace(/\[이름\]예요\?/g,    hasBatchim ? name + '예요?'   : name + '이에요?')
+    .replace(/\[이름\]이에요\?/g,  hasBatchim ? name + '예요?'   : name + '이에요?')
+    .replace(/\[이름\]/g, name);
+}
+
+function submitName() {
+  const val = document.getElementById('nameInput').value.trim();
+  if (!val) return;
+  state.playerName = val;
+  renderMapScreen();
+  showScreen('mapScreen', 'anim-up');
+}
+
+// ══════════════════════════════════════════
+// 화면 전환
+// ══════════════════════════════════════════
+function showScreen(id, animClass = 'anim-up') {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  const target = document.getElementById(id);
+  target.classList.add('active', animClass);
+  setTimeout(() => target.classList.remove(animClass), 400);
+  if (id !== 'puzzleScreen') target.scrollTop = 0;
+}
+
+// ══════════════════════════════════════════
+// 지도 화면
+// ══════════════════════════════════════════
+function renderMapScreen() {
+  document.getElementById('mapXpBadge').textContent  = state.totalXp + ' XP';
+  document.getElementById('globalXp').textContent    = state.totalXp + ' XP';
+  document.getElementById('mapProgress').textContent = state.completed.size + ' / 10 장소 완료';
+  const greeting = document.getElementById('mapGreeting');
+  if (greeting) greeting.textContent = state.playerName ? state.playerName + ' 씨의 서울 여행 🗺️' : '서울 여행 🗺️';
+
+  renderMapPins('pinsMain', 'routeMain', 390, 240, 1.26);
+  renderLocList();
+}
+
+function renderMapPins(pinsId, routeId, W, H, scale) {
+  const g = document.getElementById(pinsId);
+  const route = document.getElementById(routeId);
+  if (!g) return;
+  g.innerHTML = '';
+
+  const scaleX = x => x * (W / 390);
+  const scaleY = y => y * (H / 190) * (scale || 1);
+
+  // 경로선
+  const doneLocs = LOCATIONS.filter(l => state.completed.has(l.id) || l.id === state.currentLoc);
+  if (doneLocs.length >= 2 && route) {
+    const pts = doneLocs.map(l => `${scaleX(l.x)},${scaleY(l.y) - 14}`).join(' ');
+    route.setAttribute('points', pts);
+  }
+
+  LOCATIONS.forEach(l => {
+    const x = scaleX(l.x);
+    const y = scaleY(l.y);
+    const isDone   = state.completed.has(l.id);
+    const isActive = l.id === state.currentLoc;
+    const isLocked = !isDone && !isActive && !isNextUnlocked(l);
+
+    const grp = document.createElementNS('http://www.w3.org/2000/svg','g');
+    grp.setAttribute('id', 'map-pin-' + l.id);
+
+    if (isDone) {
+      grp.innerHTML = `
+        <line x1="${x}" y1="${y-14}" x2="${x}" y2="${y-4}" stroke="#0f9b82" stroke-width="1.5"/>
+        <circle cx="${x}" cy="${y-17}" r="9" fill="#0f9b82" stroke="#fff" stroke-width="1.8"/>
+        <circle cx="${x}" cy="${y-17}" r="3.5" fill="#fff"/>
+        <rect x="${x-15}" y="${y+2}" width="30" height="11" rx="3" fill="rgba(255,255,255,.9)"/>
+        <text x="${x}" y="${y+11}" text-anchor="middle" font-size="7" font-weight="700" fill="#0a6b58" font-family="'Noto Sans KR',sans-serif">${l.name}</text>`;
+    } else if (isActive) {
+      grp.innerHTML = `
+        <line x1="${x}" y1="${y-14}" x2="${x}" y2="${y-4}" stroke="#e03e3e" stroke-width="2"/>
+        <circle cx="${x}" cy="${y-17}" r="11" fill="#e03e3e" stroke="#fff" stroke-width="2"/>
+        <circle cx="${x}" cy="${y-17}" r="4.5" fill="#fff"/>
+        <circle cx="${x}" cy="${y-17}" r="16" fill="none" stroke="#e03e3e" stroke-width="1.5" opacity=".3">
+          <animate attributeName="r" values="11;19;11" dur="2s" repeatCount="indefinite"/>
+          <animate attributeName="opacity" values=".3;0;.3" dur="2s" repeatCount="indefinite"/>
+        </circle>
+        <rect x="${x-20}" y="${y+2}" width="40" height="12" rx="3" fill="rgba(255,255,255,.95)"/>
+        <text x="${x}" y="${y+12}" text-anchor="middle" font-size="7" font-weight="700" fill="#c02020" font-family="'Noto Sans KR',sans-serif">${l.name}</text>`;
+    } else {
+      const op = isLocked ? '.35' : '.55';
+      grp.setAttribute('opacity', op);
+      grp.innerHTML = `
+        <circle cx="${x}" cy="${y-14}" r="7" fill="#adb5c4" stroke="#fff" stroke-width="1.5"/>
+        <circle cx="${x}" cy="${y-14}" r="2.5" fill="#fff"/>
+        <rect x="${x-15}" y="${y+0}" width="30" height="11" rx="3" fill="rgba(255,255,255,.8)"/>
+        <text x="${x}" y="${y+9}" text-anchor="middle" font-size="6.5" font-weight="600" fill="#7a8494" font-family="'Noto Sans KR',sans-serif">${l.name}</text>`;
+    }
+
+    if (!isLocked) {
+      grp.style.cursor = 'pointer';
+      grp.onclick = () => openEntry(l.id);
+    }
+    g.appendChild(grp);
+  });
+}
+
+function isNextUnlocked(loc) {
+  const idx = LOCATIONS.findIndex(l => l.id === loc.id);
+  if (idx === 0) return true;
+  return state.completed.has(LOCATIONS[idx - 1].id);
+}
+
+function renderLocList() {
+  const list = document.getElementById('locList');
+  list.innerHTML = '';
+  LOCATIONS.forEach(l => {
+    const isDone   = state.completed.has(l.id);
+    const isActive = l.id === state.currentLoc || (!isDone && isNextUnlocked(l) && l.id !== state.currentLoc);
+    const isLocked = !isDone && !isNextUnlocked(l);
+    const stateClass = isDone ? 'done' : isActive ? 'active' : 'locked';
+    const statusText = isDone ? '복습하기 →' : isActive ? '도전 가능' : '잠금';
+
+    const card = document.createElement('div');
+    card.className = `loc-card ${stateClass}`;
+    if (!isLocked) card.onclick = () => openEntry(l.id);
+
+    card.innerHTML = `
+      <div class="loc-num ${stateClass}">${l.num}</div>
+      <div class="loc-info">
+        <div class="loc-name">${l.name}</div>
+        <div class="loc-desc">${l.desc}</div>
+        <div class="loc-grammar">
+          <span class="loc-unit-chip">연세 1권 ${l.unit}</span>
+          ${l.grammar.map(g=>`<span class="loc-g-chip">${g}</span>`).join('')}
+        </div>
+      </div>
+      <div class="loc-status ${stateClass}">${statusText}</div>`;
+    list.appendChild(card);
+  });
+}
+
+// ══════════════════════════════════════════
+// 진입 카드 화면
+// ══════════════════════════════════════════
+function openEntry(locId) {
+  const loc = LOCATIONS.find(l => l.id === locId);
+  if (!loc) return;
+  if (!isNextUnlocked(loc) && !state.completed.has(locId)) return;
+
+  state.currentLoc = locId;
+  renderMapPins('entryPins', 'entryRoute', 390, 160, 0.84);
+
+  const body = document.getElementById('entryBody');
+  body.innerHTML = '';
+
+  // 장소명
+  const header = document.createElement('div');
+  header.className = 'ain';
+  header.innerHTML = `
+    <div class="entry-place-tag">
+      <div class="entry-num">${loc.num}</div>
+      <div>
+        <div class="entry-place-name">${loc.name}</div>
+        <div class="entry-place-sub">${loc.desc}</div>
+      </div>
+    </div>`;
+  body.appendChild(header);
+
+  // 진입 대화 (장소별 전용 데이터)
+  const intro   = ENTRY_INTROS[locId];
+  const chatDiv = document.createElement('div');
+  chatDiv.className = 'entry-chat ain';
+  chatDiv.innerHTML = intro.messages.map(m => {
+    const txt = resolveNameToken(m.text);
+    return m.type === 'friend'
+      ? `<div class="msg-row"><div class="avatar-sm">친</div><div class="bbl-f">${txt}</div></div>`
+      : `<div class="msg-row self"><div class="bbl-s">${txt}</div></div>`;
+  }).join('');
+  body.appendChild(chatDiv);
+
+  // 문법 카드
+  const puzzles  = STAGE_PUZZLES[locId];
+  const grammars = [...new Set(puzzles.map(p => p.grammar))];
+  const gCard = document.createElement('div');
+  gCard.className = 'entry-grammar-card ain';
+  gCard.innerHTML = `
+    <div class="entry-grammar-label">이번 장소에서 배울 문법</div>
+    <div class="entry-grammar-chips">${grammars.map(g=>`<div class="entry-g-chip">${g}</div>`).join('')}</div>`;
+  body.appendChild(gCard);
+
+  showScreen('entryScreen', 'anim-up');
+}
+
+function startPuzzle() {
+  const loc = LOCATIONS.find(l => l.id === state.currentLoc);
+  state.puzzleIdx = 0;
+  state.sessionXp = 0;
+  state.sessionCorrect = 0;
+  state.sessionHints = 0;
+  state.hintsLeft = 3;
+
+  document.getElementById('puzzleStageName').textContent = `${loc.num}번째 장소 — ${loc.name}`;
+  document.getElementById('puzzleStageSub').textContent  = loc.desc;
+
+  renderMapPins('puzzlePins', 'puzzleRoute', 390, 140, 0.74);
+  loadPuzzle(0);
+  showScreen('puzzleScreen', 'anim-up');
+}
+
+// ══════════════════════════════════════════
+// 퍼즐 화면
+// ══════════════════════════════════════════
+function loadPuzzle(i) {
+  state.puzzleIdx = i;
+  state.slotWords = [];
+  state.hintUsed  = false;
+  state.answered  = false;
+
+  const puzzles = STAGE_PUZZLES[state.currentLoc];
+  // [이름] 토큰을 실제 이름으로 치환 (deep-clone으로 원본 보호)
+  const raw = puzzles[i];
+  const p = {
+    ...raw,
+    friendMsg:  resolveNameToken(raw.friendMsg  || ''),
+    friendMsg2: raw.friendMsg2 ? resolveNameToken(raw.friendMsg2) : raw.friendMsg2,
+    selfMsg:    raw.selfMsg    ? resolveNameToken(raw.selfMsg)    : raw.selfMsg,
+    hintText:   resolveNameToken(raw.hintText   || ''),
+    answer:      raw.answer.map(resolveNameToken),
+    distractors: raw.distractors.map(resolveNameToken),
+  };
+
+  // 진행 바
+  const row = document.getElementById('progRow');
+  row.innerHTML = '';
+  puzzles.forEach((_,j) => {
+    const s = document.createElement('div');
+    s.className = 'prog-seg' + (j<i?' done':j===i?' active':'');
+    row.appendChild(s);
+  });
+
+  // XP 표시
+  document.getElementById('puzzleXpPill').textContent = state.totalXp + ' XP';
+
+  // 채팅
+  const area = document.getElementById('scrollArea');
+  area.innerHTML = '';
+  addBubble(area, 'friend', p.friendMsg,  p.friendMsgT);
+  if (p.selfMsg)    addBubble(area, 'self',   p.selfMsg,    p.selfMsgT);
+  if (p.friendMsg2) addBubble(area, 'friend', p.friendMsg2, p.friendMsg2T);
+
+  // 퍼즐 카드
+  const card = document.createElement('div');
+  card.className = 'p-card ain';
+  card.innerHTML = `
+    <div class="p-card-hd">
+      <span class="p-card-lbl">문장 완성하기</span>
+      <span class="g-badge">${p.grammar}</span>
+    </div>
+    <div class="p-hint">${p.hintText}</div>
+    <div class="slot-wrap">
+      <div class="slot-area" id="slotArea">
+        <span class="slot-ph">카드를 탭해서 여기에 놓으세요</span>
+      </div>
+    </div>`;
+  area.appendChild(card);
+
+  // 트레이
+  const tray = document.getElementById('trayChips');
+  tray.innerHTML = '';
+  shuffle([...p.answer, ...p.distractors]).forEach(w => {
+    const btn = document.createElement('button');
+    btn.className = 'chip chip-t';
+    btn.textContent = w; btn.dataset.word = w;
+    btn.onclick = () => tapTray(btn);
+    tray.appendChild(btn);
+  });
+
+  updateCheck();
+  showDefaultBtns();
+  // 새 퍼즐 로드 시 스크롤을 맨 위로 리셋해서 첫 말풍선이 잘리지 않게 함
+  const scrollArea = document.getElementById('scrollArea');
+  if (scrollArea) scrollArea.scrollTop = 0;
+}
+
+function addBubble(area, type, html, translation) {
+  const row = document.createElement('div');
+  row.className = 'msg-row' + (type==='self'?' self':'') + ' ain';
+  const transBtn   = translation ? `<button class="trans-btn" onclick="toggleTrans(this)">🌐</button>` : '';
+  const transBlock = translation ? `<div class="bbl-trans">${translation}</div>` : '';
+  const inner = `<div class="bbl-header"><span class="bbl-text">${html}</span>${transBtn}</div>${transBlock}`;
+  if (type === 'friend') {
+    row.innerHTML = `
+      <div class="avatar-sm">친</div>
+      <div class="bbl-f-wrap"><div class="bbl-f">${inner}</div></div>`;
+  } else {
+    row.innerHTML = `
+      <div class="bbl-s-wrap"><div class="bbl-s">${inner}</div></div>`;
+  }
+  area.appendChild(row);
+}
+
+function toggleTrans(btn) {
+  const bubble = btn.closest('.bbl-f, .bbl-s');
+  const trans  = bubble?.querySelector('.bbl-trans');
+  if (!trans) return;
+  const on = trans.classList.toggle('show');
+  btn.classList.toggle('active', on);
+}
+
+function tapTray(btn) {
+  if (state.answered || btn.classList.contains('used')) return;
+  btn.classList.add('used');
+  state.slotWords.push(btn.dataset.word);
+  renderSlot(); updateCheck();
+}
+
+function renderSlot(result) {
+  const slot = document.getElementById('slotArea');
+  if (!slot) return;
+  if (!state.slotWords.length) {
+    slot.innerHTML = '<span class="slot-ph">카드를 탭해서 여기에 놓으세요</span>'; return;
+  }
+  const p = STAGE_PUZZLES[state.currentLoc][state.puzzleIdx];
+  slot.innerHTML = '';
+  state.slotWords.forEach((w, i) => {
+    const c = document.createElement('div');
+    c.className = 'chip chip-s';
+    if (result === 'correct') c.classList.add('cor');
+    else if (result === 'wrong') c.classList.add(p.answer[i] === w ? 'cor' : 'wrg');
+    c.textContent = w;
+    if (!result) c.onclick = () => removeSlot(i);
+    slot.appendChild(c);
+  });
+}
+
+function removeSlot(i) {
+  if (state.answered) return;
+  const w = state.slotWords[i];
+  state.slotWords.splice(i, 1);
+  const t = [...document.querySelectorAll('#trayChips .chip-t')].find(b => b.dataset.word===w && b.classList.contains('used'));
+  if (t) t.classList.remove('used');
+  renderSlot(); updateCheck();
+}
+
+function updateCheck() {
+  const btn = document.getElementById('btnCheck');
+  if (btn) btn.disabled = !state.slotWords.length;
+}
+
+function checkAnswer() {
+  if (state.answered) return;
+  const p  = STAGE_PUZZLES[state.currentLoc][state.puzzleIdx];
+  const ok = JSON.stringify(state.slotWords) === JSON.stringify(p.answer);
+  state.answered = true;
+
+  const slot = document.getElementById('slotArea');
+  slot.className = 'slot-area ' + (ok ? 'ok' : 'ng');
+  renderSlot(ok ? 'correct' : 'wrong');
+
+  const xp = ok ? (state.hintUsed ? 10 : 20) : 5;
+  state.totalXp    += xp;
+  state.sessionXp  += xp;
+  if (ok) state.sessionCorrect++;
+  document.getElementById('puzzleXpPill').textContent = state.totalXp + ' XP';
+  document.getElementById('globalXp').textContent     = state.totalXp + ' XP';
+  showXpToast('+' + xp + ' XP');
+
+  const area = document.getElementById('scrollArea');
+  setTimeout(() => {
+    const row = document.createElement('div');
+    row.className = 'res-row ain';
+    row.innerHTML = ok
+      ? `<div class="avatar-sm">친</div>
+         <div class="bbl-ok"><div class="res-lbl ok">잘했어요! 👍</div><div class="g-tip">${p.tip}</div></div>`
+      : `<div class="avatar-sm">친</div>
+         <div class="bbl-ng"><div class="res-lbl ng">다시 확인해봐요</div><div class="res-sent">${p.answer.join(' ')}</div><div class="g-tip">${p.tip}</div></div>`;
+    area.appendChild(row);
+    scrollBot();
+  }, 300);
+
+  document.getElementById('btnBar').innerHTML = ok
+    ? `<button class="btn btn-next" style="flex:1" onclick="nextPuzzle()">다음 문장 →</button>`
+    : `<button class="btn btn-retry" onclick="retryPuzzle()">다시 풀기</button>
+       <button class="btn btn-next" onclick="nextPuzzle()">다음으로 →</button>`;
+}
+
+function showDefaultBtns() {
+  document.getElementById('btnBar').innerHTML = `
+    <button class="btn btn-hint" id="btnHint" onclick="useHint()" ${state.hintsLeft===0?'disabled':''}>힌트 (${state.hintsLeft})</button>
+    <button class="btn btn-check" id="btnCheck" onclick="checkAnswer()" disabled>확인하기</button>`;
+}
+
+function useHint() {
+  if (!state.hintsLeft || state.answered) return;
+  state.hintsLeft--; state.hintUsed = true; state.sessionHints++;
+  const first = STAGE_PUZZLES[state.currentLoc][state.puzzleIdx].answer[0];
+  if (!state.slotWords.includes(first)) {
+    const t = [...document.querySelectorAll('#trayChips .chip-t')].find(b => b.dataset.word===first && !b.classList.contains('used'));
+    if (t) t.classList.add('used');
+    state.slotWords = [first, ...state.slotWords.filter(w => w !== first)];
+    renderSlot(); updateCheck();
+  }
+  const hintBtn = document.getElementById('btnHint');
+  if (hintBtn) {
+    hintBtn.textContent = `힌트 (${state.hintsLeft})`;
+    if (!state.hintsLeft) hintBtn.disabled = true;
+  }
+}
+
+function retryPuzzle() {
+  state.slotWords = []; state.hintUsed = false; state.answered = false;
+  const slot = document.getElementById('slotArea');
+  slot.className = 'slot-area';
+  slot.innerHTML  = '<span class="slot-ph">카드를 탭해서 여기에 놓으세요</span>';
+  document.querySelectorAll('#trayChips .chip-t').forEach(b => b.classList.remove('used'));
+  const last = document.querySelector('.res-row');
+  if (last) last.remove();
+  updateCheck(); showDefaultBtns();
+}
+
+function nextPuzzle() {
+  const puzzles = STAGE_PUZZLES[state.currentLoc];
+  if (state.puzzleIdx + 1 >= puzzles.length) {
+    showComplete();
+  } else {
+    loadPuzzle(state.puzzleIdx + 1);
+  }
+}
+
+// ══════════════════════════════════════════
+// 장소 완료 화면
+// ══════════════════════════════════════════
+function showComplete() {
+  const loc     = LOCATIONS.find(l => l.id === state.currentLoc);
+  const puzzles = STAGE_PUZZLES[state.currentLoc];
+
+  state.completed.add(state.currentLoc);
+
+  document.getElementById('completePlaceName').textContent = loc.name + ' 완료!';
+  document.getElementById('completeXpBig').innerHTML       = state.sessionXp + ' <span>XP</span>';
+  document.getElementById('statCorrect').textContent       = state.sessionCorrect + ' / ' + puzzles.length;
+  document.getElementById('statHints').textContent         = state.sessionHints;
+  document.getElementById('statTotal').textContent         = state.totalXp + ' XP';
+
+  const grammars = [...new Set(puzzles.map(p => p.grammar))];
+  document.getElementById('grChips').innerHTML = grammars.map(g => `<div class="gr-chip">${g}</div>`).join('');
+
+  showScreen('completeScreen', 'anim-up');
+}
+
+// ══════════════════════════════════════════
+// 지도 복귀
+// ══════════════════════════════════════════
+function returnToMap() {
+  // 다음 열릴 장소 설정
+  const nextIdx = LOCATIONS.findIndex(l => l.id === state.currentLoc) + 1;
+  if (nextIdx < LOCATIONS.length) {
+    state.currentLoc = LOCATIONS[nextIdx].id;
+  } else {
+    state.currentLoc = null;
+  }
+
+  renderMapScreen();
+  showScreen('mapScreen', 'anim-down');
+
+  // 완료 핀 팝 애니메이션
+  setTimeout(() => {
+    const completedLoc = LOCATIONS.find(l => state.completed.has(l.id) && l.id !== state.currentLoc);
+    if (completedLoc) {
+      const pin = document.getElementById('map-pin-' + completedLoc.id);
+      if (pin) { pin.classList.add('pin-pop'); setTimeout(() => pin.classList.remove('pin-pop'), 500); }
+    }
+  }, 200);
+}
+
+function replayStage() {
+  state.completed.delete(state.currentLoc);
+  state.sessionXp      = 0;
+  state.sessionCorrect = 0;
+  state.sessionHints   = 0;
+  state.hintsLeft      = 3;
+  startPuzzle();
+}
+
+// ══════════════════════════════════════════
+// 유틸
+// ══════════════════════════════════════════
+function showXpToast(text) {
+  const el = document.getElementById('xpToast');
+  el.textContent = text; el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 900);
+}
+function scrollBot() {
+  const a = document.getElementById('scrollArea');
+  setTimeout(() => a.scrollTo({ top: a.scrollHeight, behavior:'smooth' }), 80);
+}
+function shuffle(arr) {
+  for (let i = arr.length-1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i+1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+// ══════════════════════════════════════════
+// 초기 진입점
+// ══════════════════════════════════════════
+// 이름 입력 화면부터 시작 (nameScreen은 HTML에서 active로 설정됨)
+// 아래는 개발 테스트용 초기 상태 (실제 배포 시 제거)
+// state.completed.add('hongdae');
+// state.completed.add('myeongdong');
+// state.currentLoc = 'gyeongbok';
+// state.totalXp    = 240;
+// renderMapScreen();
+// showScreen('mapScreen', 'anim-in');
+</script>
+</body>
+</html>
